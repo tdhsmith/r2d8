@@ -15,3 +15,15 @@ Requirements:
 To authorize this, you need to add keys from the app creation into the file specified in r2d8_oauth.py
 
 Former people who've ran this bot will have those keys until you regenerate them. 
+
+When you run it, use ./r2_supervisor.sh to make it more resilent to dying. 
+
+If it dies, this will restart it.
+
+To kill this app's process, (as you need to do when you update the code), type 
+
+      ps -aux|grep artoodeeeight.py
+
+then type the number that appears in the second column.
+
+To kill the supervisor, do the same thing with the name of the supervisor program, then kill the app's process 
