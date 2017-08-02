@@ -24,6 +24,8 @@ To kill this app's process, (as you need to do when you update the code), type
 
       ps -aux|grep artoodeeeight.py
 
-then type the number that appears in the second column.
+then type the number that appears in the second column after "kill", e.g.:
+
+      kill 29389
 
 To kill the supervisor, do the same thing with the name of the supervisor program, then kill the app's process 

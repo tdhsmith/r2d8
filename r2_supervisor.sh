@@ -1,5 +1,11 @@
 #! /bin/bash
 
+for pid in $(pidof -x r2_supervisor.sh); do
+    if [ $pid != $$ ]; then
+      echo "Supervisor is still running, stopping myself (I am a replacement supervisor)"
+      exit 0
+    fi
+done 
 
 function run_robot {
     echo "Starting r2d8"
