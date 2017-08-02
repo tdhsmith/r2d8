@@ -2,14 +2,13 @@ import argparse
 import praw
 import logging
 import re
-from HTMLParser import HTMLParser
 from time import sleep
-
+from HTMLParser import HTMLParser 
 from argParseLog import addLoggingArgs, handleLoggingArgs
 from BotDatabase import BotDatabase
 from CommentHandler import CommentHandler
 
-from r2d8_auth import login as oauth_login
+from r2d8_oauth import login as oauth_login
 
 log = logging.getLogger(__name__)
 
