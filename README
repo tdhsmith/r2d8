@@ -8,8 +8,10 @@ where UID is the UID of the bot, usually "r2d8".
 Currently the bot acknowledges ^C, but does not exit. One consume thread is not dying for some reason.
 
 Requirements:
- - PRAW
+ - PRAW 5.0
  - boardgamegeek
  - sqlite3 (included in most distributions, I think.)
 
-For authorization an file in the current directory must exist, must be named "r2d8_auth.py" and must export a method named login() that logs into Reddit and returns a PRAW Reddit instance. See https://www.reddit.com/r/GoldTesting/comments/3cm1p8/how_to_make_your_bot_use_oauth2/ for details. 
+To authorize this, you need to add keys from the app creation into the file specified in r2d8_oauth.py
+
+Former people who've ran this bot will have those keys until you regenerate them. 
