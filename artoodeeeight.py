@@ -13,7 +13,9 @@ from r2d8_oauth import login as oauth_login
 log = logging.getLogger(__name__)
 log.setLevel(10)
 
-if __name__ == '__main__':
+  
+
+def run_bot():
     ap = argparse.ArgumentParser()
     botname = 'r2d8'
     dbname = '{}-bot.db'.format(botname)
@@ -66,3 +68,6 @@ if __name__ == '__main__':
 
         # get_mentions is non-blocking
         sleep(5)
+
+if "__main__" == __name__:
+    run_bot()
