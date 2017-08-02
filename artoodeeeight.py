@@ -11,6 +11,7 @@ from CommentHandler import CommentHandler
 from r2d8_oauth import login as oauth_login
 
 log = logging.getLogger(__name__)
+log.setLevel(10)
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
@@ -50,7 +51,7 @@ if __name__ == '__main__':
 	    print("Trying to list mentions")
             for comment in list(reddit.inbox.mentions()) + list(reddit.inbox.unread()):
 		print("comment",comment)
-                # log.debug(u'got {}'.format(comment.id))
+                log.debug(u'got {}'.format(comment.id))
                 if not bdb.comment_exists(comment):
                     bdb.add_comment(comment)
                     for cmd in [c.lower() for c in botcmds.findall(comment.body)]:

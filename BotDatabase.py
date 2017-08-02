@@ -53,7 +53,7 @@ class BotDatabase(object):
 
     def add_comment(self, comment):
         log.debug(u'adding comment {} to database'.format(comment.id))
-        comment.mark_as_read()
+        comment.mark_read()
         self._connection.execute(u'INSERT INTO comments VALUES(?)', (comment.id,))
         self._connection.commit()
 
