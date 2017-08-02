@@ -47,7 +47,9 @@ if __name__ == '__main__':
     log.info(u'Waiting for new PMs and/or notifications.')
     while True:
         try:
-            for comment in list(reddit.get_mentions()) + list(reddit.get_unread()):
+	    print("Trying to list mentions")
+            for comment in list(reddit.inbox.mentions()) + list(reddit.inbox.unread()):
+		print("comment",comment)
                 # log.debug(u'got {}'.format(comment.id))
                 if not bdb.comment_exists(comment):
                     bdb.add_comment(comment)
