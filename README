@@ -68,4 +68,10 @@ Now you should be able to work on artoodeeeight.py with the service off. To turn
 
 And then wait somewhere between 1 and 75 seconds for it to start working again. I suggest posting a test command in reddit somewhere and then r2d8 will catch the unread mention when it comes back on. 
 
+____
 
+In addition to the app, you should run a log rotation program. To do so, type the following in the scripts folder 
+
+logstatus -s logs/logstatus etc/logstatus.conf
+
+This tells the program to rotate the logs when a certain critera is met. In our case, it's when a certain file size is reached. See the conf file for deatils and the documentation on the logstatus program. 
