@@ -2,5 +2,6 @@
 *.pyc
 *.db
 r2d8_auth.py
+logs/*.log.[1-9]
 logs/*.log
 logs/logstatus
