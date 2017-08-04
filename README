@@ -2,6 +2,8 @@ These files are intended to be run from a directory on your computer called:
 
 /home/r2d8/r2d8-scripts
 
+# Databases
+
 When run the bot creates two sqlite databases, one for BGG URL queries and one for keeping track of comments and responses. The default names are:
 
     UID-bot.db - the comment database
@@ -9,16 +11,17 @@ When run the bot creates two sqlite databases, one for BGG URL queries and one f
 
 where UID is the UID of the bot, usually "r2d8". 
 
-Currently the bot acknowledges ^C, but does not exit. One consume thread is not dying for some reason.
-
 Requirements:
  - PRAW 5.0
  - boardgamegeek
  - sqlite3 (included in most distributions, I think.)
 
-To authorize this, you need to add keys from the app creation into the file specified in r2d8_oauth.py
+To authorize this, you need to add keys from the app creation into the file ~/.config/praw.ini
 
 Former people who've ran this bot will have those keys until you regenerate them. 
+
+
+# Operation 
 
 If you're manually trying to debug it, you can run the python file with
 
@@ -36,7 +39,7 @@ You can pass a PID to the program "kill" to make it go away. So if the listed PI
 
 Will make the artooodeeeight program stop running.
 
-____
+# Production (i.e. when you're not just testing it out)
 
 When you run it "in production",  we use 2 layers to make it keep going.
 
@@ -68,7 +71,7 @@ Now you should be able to work on artoodeeeight.py with the service off. To turn
 
 And then wait somewhere between 1 and 75 seconds for it to start working again. I suggest posting a test command in reddit somewhere and then r2d8 will catch the unread mention when it comes back on. 
 
-____
+# Logs
 
 In addition to the app, you should run a log rotation program. To do so, type the following in the scripts folder 
 
