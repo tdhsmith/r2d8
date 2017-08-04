@@ -26,7 +26,7 @@ If you're manually trying to debug it, you can run the python file with
 
 To kill this app's process, (as you need to do when you update the code), type 
 
-      ps -aux|grep artoodeeeight.py|grep -v "grep"
+      ps -aux|grep artoodeeeight.py|grep -v grep
 
 The numbers in the second column are the "Process Identifiers" or PIDs. 
 
@@ -54,12 +54,12 @@ This removes *all* cron jobs though for the user, so if you're on an account wit
 
 Then kill the r2_supervisor.sh script similar to how you did with the artoodeeeight file:
 
-       ps -aux|grep r2_supervisor.sh|grep -v "grep"  
+       ps -aux|grep r2_supervisor.sh|grep -v grep|grep bash
        kill (whatever number)
 
 Then kill artoodeeeight.py:
 
-       ps -aux|grep artoodeeeight.py |grep -v "grep"  
+       ps -aux|grep artoodeeeight.py |grep -v grep  
        kill (whatever number)
 
 Now you should be able to work on artoodeeeight.py with the service off. To turn the service back on, go:
