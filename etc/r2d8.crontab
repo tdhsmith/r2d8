@@ -1,0 +1,4 @@
+# m h  dom mon dow   command
+# run the supervisor if it is not 
+*/1 * * * * /bin/bash /home/r2d8/r2d8-scripts/r2_supervisor.sh >> /home/r2d8/r2d8-scripts/logs/r2d8.log 2>&1
+

@@ -2,3 +2,4 @@
 *.pyc
 *.db
 r2d8_auth.py
+logs/*.log
