@@ -11,9 +11,6 @@ from CommentHandler import CommentHandler
 from r2d8_oauth import login as oauth_login
 
 log = logging.getLogger(__name__)
-log.setLevel(10)
-
-  
 
 def run_bot():
     ap = argparse.ArgumentParser()
@@ -50,9 +47,7 @@ def run_bot():
     log.info(u'Waiting for new PMs and/or notifications.')
     while True:
         try:
-	    print("Trying to list mentions")
             for comment in list(reddit.inbox.mentions()) + list(reddit.inbox.unread()):
-		print("comment",comment)
                 log.debug(u'got {}'.format(comment.id))
                 if not bdb.comment_exists(comment):
                     bdb.add_comment(comment)

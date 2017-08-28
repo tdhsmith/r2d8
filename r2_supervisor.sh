@@ -10,7 +10,7 @@ done
 
 function run_robot {
     echo "Starting r2d8"
-    /usr/bin/python2 /home/r2d8/r2d8-scripts/artoodeeeight.py >> /home/r2d8/r2d8-scripts/logs/r2d8.log 2>&1
+    /usr/bin/python2 /home/r2d8/r2d8-scripts/artoodeeeight.py -l info >> /home/r2d8/r2d8-scripts/logs/r2d8.log 2>&1
 }
 
 
