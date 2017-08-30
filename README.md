@@ -31,6 +31,8 @@ If you're manually trying to debug it, you can run the python file with
 
 Run the bot on a systemd system. Copy r2d8.service to /lib/systemd/system (on Ubuntu 16) and enable the service via 'sudo systemctl enable r2d8.service'. You should be able to start/stop/status (and all the usual systemd commands) on the r2d8 service. 
 
+To start the service: 'sudo systemctl start r2d8'.
+
 The bot expects to be run from /home/r2d8/r2d8-scripts under the user 'r2d8'. If not is not the case, please update the r2d8.service file with the appropriate values. 
 :
 The logs for the service can be viewed in /var/log/syslog or via 'sudo journalctl -u r2d8'.
