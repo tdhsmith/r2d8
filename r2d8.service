@@ -1,0 +1,14 @@
+[Unit]
+Description=Reddit boardgame information response service.
+After=multi-user.target
+Documentation=https://github.com/rboardgames/r2d8
+
+[Service]
+User=r2d8
+Restart=on-failure
+Type=simple
+WorkingDirectory=/home/r2d8/r2d8-scripts
+ExecStart=/usr/bin/python2 artoodeeeight.py -l info -d r2d8-bot.db
+
+[Install]
+WantedBy=multi-user.target
