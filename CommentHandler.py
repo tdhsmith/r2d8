@@ -358,7 +358,7 @@ class CommentHandler(object):
             log.info(u'Got a repair comment as root, ignoring.')
             return
 
-        parent = comment.reddit_session.get_info(thing_id=comment.parent_id)
+        parent = comment.parent()
         if parent.author.name != self._botname:
             log.info(u'Parent of repair comment is not authored by the bot, ignoring.')
             return
@@ -386,7 +386,7 @@ class CommentHandler(object):
             pbody += u' **{}**'.format(nf)
 
         # now re-insert the original command to retain the mode.
-        grandparent = parent.reddit_session.get_info(thing_id=parent.parent_id)
+        grandparent = parent.parent()
         modes = list()
         if not grandparent:
             log.error(u'Cannot find original GP post. Assuming normal mode.')
@@ -427,7 +427,7 @@ class CommentHandler(object):
         if m:
             mode = u'short' if m.group(1).lower() == u'short' else u'long'
 
-        parent = comment.reddit_session.get_info(thing_id=comment.parent_id)
+        parent = comment.parent()
         self.getInfo(parent, comment, mode)
 
     def alias(self, comment):
