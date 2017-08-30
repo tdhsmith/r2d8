@@ -18,6 +18,8 @@ def run_bot():
     dbname = '{}-bot.db'.format(botname)
     ap.add_argument(u'-d', u'--database', help=u'The bot database. Default is {}'.format(dbname),
                     default=u'{}'.format(dbname))
+    ap.add_argument('-r', '--read', help='Mark all existing queries as read without responding, then exit.',
+                    default=False, action='store_true', dest="mark_read")
     addLoggingArgs(ap)
     args = ap.parse_args()
     handleLoggingArgs(args)
@@ -28,6 +30,8 @@ def run_bot():
 
     # quiet requests
     logging.getLogger(u"requests").setLevel(logging.WARNING)
+    logging.getLogger(u"prawcore").setLevel(logging.WARNING)
+    logging.getLogger(u"urllib3").setLevel(logging.WARNING)
 
     reddit = oauth_login()
 
@@ -51,6 +55,9 @@ def run_bot():
                 log.debug(u'got {}'.format(comment.id))
                 if not bdb.comment_exists(comment):
                     bdb.add_comment(comment)
+                    if args.mark_read:
+                        continue
+
                     for cmd in [c.lower() for c in botcmds.findall(comment.body)]:
                         if cmd in cmdmap:
                             comment.body = hp.unescape(comment.body)
@@ -62,6 +69,9 @@ def run_bot():
             log.error(u'Caught exception: {}'.format(e))
 
         # get_mentions is non-blocking
+        if args.mark_read:
+            exit(0)
+
         sleep(5)
 
 if "__main__" == __name__:
