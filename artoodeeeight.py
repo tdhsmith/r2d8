@@ -46,7 +46,8 @@ def run_bot():
         u'xyzzy': ch.xyzzy,
         u'alias': ch.alias,
         u'getaliases': ch.getaliases,
-        u'getparentinfo': ch.getParentInfo
+        u'getparentinfo': ch.getParentInfo,
+        u'getinfoparent': ch.getParentInfo
     }
     log.info(u'Waiting for new PMs and/or notifications.')
     while True:
