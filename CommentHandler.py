@@ -315,7 +315,7 @@ class CommentHandler(object):
             if game.playing_time and int(game.playing_time) != 0:
                 info += '{} minutes; '.format(game.playing_time)
             if game.image:
-                info += '[img]({}) '.format(game.image)
+                info += '[BGG Image]({}) '.format(game.image)
             info += '\n\n'
 
             data = u', '.join(getattr(game, u'mechanics', u''))
