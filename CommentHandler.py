@@ -157,8 +157,8 @@ class CommentHandler(object):
 
         if comment.subreddit.display_name.lower() == u'boardgamescirclejerk':
             cjgames = [
-                [u'Dead of Winter: A Crossroads Game'],
-                [u'Scythe']
+                [u'Gloomhaven'],
+                [u'Patchwork']
             ]
             bolded = choice(cjgames)
             bolded = ['Scythe', 'Scythe', 'Scythe']
@@ -285,7 +285,7 @@ class CommentHandler(object):
                 info += '{} minutes; '.format(game.playing_time)
 
             if game.image:
-                info += '[img]({}) '.format(game.image)
+                info += '[BGG Image]({}) '.format(game.image)
 
             info += '\n\n'
 
