@@ -16,7 +16,7 @@ def login():
     config = ConfigParser.ConfigParser()
     config.read(config_file_name)
     # todo: make it error out on file missing
-    print("found: ", config.sections(), " if this doens't have bg3po_helper_scripts, you have a generic file")
+    print("found: ", config.sections(), " if this doens't have r2d8_helper_scripts, you have a generic file")
     section_name = 'r2d8_helper_scripts'
     log.info('logging into reddit')
     r = praw.Reddit(
