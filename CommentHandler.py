@@ -11,6 +11,7 @@ from os.path import join as pjoin
 from boardgamegeek import BoardGameGeek as BGG
 from boardgamegeek.api import BoardGameGeekNetworkAPI
 import boardgamegeek
+import praw
 
 log = logging.getLogger(__name__)
 
@@ -21,6 +22,7 @@ class CommentHandler(object):
         self._botname = UID
         self._header = (u'^*[{}](/r/r2d8)* ^*issues* ^*a* ^*series* ^*of* ^*sophisticated* '
                         u'^*bleeps* ^*and* ^*whistles...*\n\n'.format(self._botname))
+        self._footer = u''
 
         dbpath = pjoin(getcwd(), u'{}-bgg.db'.format(self._botname))
         self._bgg = BGG(cache=u'sqlite://{}?ttl=86400'.format(dbpath))
@@ -131,26 +133,20 @@ class CommentHandler(object):
 
         return None
 
-    def _getInfoResponseBody(self, comment, mode=None):
-        body = comment.body
-        # bolded = re.findall(u'\*\*([^\*]+)\*\*', body)
-        # Now I've got two problems.
-        bolded = re.findall(u'\*\*([\w][\w\.\s:\-?$,!\'–&()\[\]]*[\w\.:\-?$,!\'–&()\[\]])\*\*', body, flags=re.UNICODE)
-        if not bolded:
-            log.warn(u'Got getinfo command, but nothing is bolded. Ignoring comment.')
-            log.debug(u'comment was: {}'.format(body))
-            return
-
+    def _findGames(self, items):
         # convert aliases to real names. It may be better to do this after we don't find the
         # game. Oh, well.
-        for i in xrange(len(bolded)):
+        #   I think this might be better behavior, since it makes it easy to
+        #   replace findable-but-unlikely results with the more popular result
+        #   that was probably intended. -TDHS
+        for i in xrange(len(items)):
             real_name = self._botdb.get_name_from_alias(bolded[i])
             if real_name:
                 bolded[i] = real_name
 
         # filter out dups.
-        bolded = list(set(bolded))
-        bolded = [unquote(b) for b in bolded]
+        items = list(set(bolded))
+        items = [unquote(b) for b in bolded]
 
         games = []
         not_found = []
@@ -187,7 +183,20 @@ class CommentHandler(object):
 
         # we now have all the games.
         mode = u'short' if len(games) > 6 else mode
-        # not_found = list(set(bolded) - set([game.name for game in games]))
+
+        return [games, not_found]
+
+    def _getInfoResponseBody(self, comment, mode=None):
+        body = comment.body
+        # bolded = re.findall(u'\*\*([^\*]+)\*\*', body)
+        # Now I've got two problems.
+        bolded = re.findall(u'\*\*([\w][\w\.\s:\-?$,!\'–&()\[\]]*[\w\.:\-?$,!\'–&()\[\]])\*\*', body, flags=re.UNICODE)
+        if not bolded:
+            log.warn(u'Got getinfo command, but nothing is bolded. Ignoring comment.')
+            log.debug(u'comment was: {}'.format(body))
+            return
+
+        [games, not_found] = self._findGames(bolded)
 
         if comment.subreddit.display_name.lower() == u'boardgamescirclejerk':
             not_found = None
@@ -239,8 +248,8 @@ class CommentHandler(object):
 
         return players
 
-    def getInfo(self, comment, replyTo=None, mode=None):
-        '''Reply to comment with game information. If replyTo isot given reply to original else
+    def getInfo(self, comment: praw.models.Comment, replyTo=None, mode=None):
+        '''Reply to comment with game information. If replyTo is given reply to original else
         reply to given comment.'''
         if self._botdb.ignore_user(comment.author.name):
             log.info("Ignoring comment by {}".format(comment.author.name))
@@ -458,3 +467,18 @@ class CommentHandler(object):
 
         log.info(u'Responding to getalaises request with {} aliases'.format(len(aliases)))
         comment.reply(response)
+
+    def getThreadInfo(self, comment: praw.models.Comment):
+        '''get info for all top-level comments in a single thread'''
+        if self._botdb.ignore_user(comment.author.name):
+            log.info("Ignoring comment by {}".format(comment.author.name))
+            return
+        if (not comment.is_root):
+            # TODO: respond directly to the user
+            comment.author.message('r2d8 command error', 
+                u'The `getthreadinfo` command must be used in a top-level comment.\n\nFor questions and issues, please visit /r/r2d8.')
+            return
+
+
+        for c in comment.parent().comments:
+            continue # TODO here
