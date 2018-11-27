@@ -140,27 +140,19 @@ class CommentHandler(object):
         #   replace findable-but-unlikely results with the more popular result
         #   that was probably intended. -TDHS
         for i in range(len(items)):
-            real_name = self._botdb.get_name_from_alias(bolded[i])
+            real_name = self._botdb.get_name_from_alias(items[i])
             if real_name:
-                bolded[i] = real_name
+                items[i] = real_name
 
         # filter out dups.
-        items = list(set(bolded))
-        items = [unquote(b) for b in bolded]
+        items = list(set(items))
+        items = [unquote(b) for b in items]
 
         games = []
         not_found = []
 
-        if comment.subreddit.display_name.lower() == 'boardgamescirclejerk':
-            cjgames = [
-                ['Gloomhaven'],
-                ['Patchwork']
-            ]
-            bolded = choice(cjgames)
-            bolded = ['Scythe', 'Scythe', 'Scythe']
-
         seen = set()
-        for game_name in bolded:
+        for game_name in items:
             log.info('asking BGG for info on {}'.format(game_name))
             try:
                 # game = self._bgg.game(game_name)
@@ -181,9 +173,6 @@ class CommentHandler(object):
         # sort by game name because why not?
         games = sorted(games, key=lambda g: g.name)
 
-        # we now have all the games.
-        mode = 'short' if len(games) > 6 else mode
-
         return [games, not_found]
 
     def _getInfoResponseBody(self, comment, mode=None):
@@ -196,7 +185,13 @@ class CommentHandler(object):
             log.debug('comment was: {}'.format(body))
             return
 
+        if comment.subreddit.display_name.lower() == 'boardgamescirclejerk':
+                cjgames = ['Gloomhaven', 'Patchwork', 'Scythe']
+                bolded = [choice(cjgames), 'Keyforge', 'Keyforge', 'Keyforge']
         [games, not_found] = self._findGames(bolded)
+
+        # we now have all the games.
+        mode = 'short' if len(games) > 6 else mode
 
         if comment.subreddit.display_name.lower() == 'boardgamescirclejerk':
             not_found = None
