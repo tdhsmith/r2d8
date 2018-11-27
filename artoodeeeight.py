@@ -46,6 +46,10 @@ def start_bot():
         help='Run the tool on a specific comment ID target',
         default=None)
     ap.add_argument(
+        '--command',
+        help='When run in target mode, overrides/simulates a specific bot command',
+        default=None)
+    ap.add_argument(
         '-c',
         '--config',
         help='Config file location for PRAW',
@@ -91,7 +95,8 @@ def start_bot():
             bdb.add_comment(comment)
             if args.mark_read:
                 return
-        for cmd in [c.lower() for c in BOTCMD_REGEX.findall(comment.body)]:
+        commands = [args.command] if args.command else [c.lower() for c in BOTCMD_REGEX.findall(comment.body)]
+        for cmd in commands:
             if cmd in CMDMAP:
                 comment.body = hp.unescape(comment.body)
                 CMDMAP[cmd](comment)
