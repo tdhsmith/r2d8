@@ -38,7 +38,7 @@ class BotDatabase(object):
         if not q:
             log.info(u'Creating bot_admins table.')
             self._connection.execute(u'CREATE table bot_admins (ruid text)')
-            for a in ['phil_s_stein', u'timotab']:
+            for a in [u'r2d8']:
                 log.info(u'Adding {} as admin'.format(a))
                 self._connection.execute(u'INSERT INTO bot_admins VALUES (?)', (a,))
 
