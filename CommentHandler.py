@@ -254,7 +254,7 @@ class CommentHandler(object):
                 comment.reply(response)
             log.info(u'Replied to info request for comment {}'.format(comment.id))
         else:
-            log.warn(u'Did not find anything to reply to in comment'.format(comment.id))
+            log.warn(u'Did not find anything to reply to in comment {}'.format(comment.id))
 
     def _getShortInfos(self, games):
         infos = list()

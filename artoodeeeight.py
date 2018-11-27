@@ -16,15 +16,19 @@ def run_bot():
     ap = argparse.ArgumentParser()
     botname = 'r2d8'
     dbname = '{}-bot.db'.format(botname)
+    sleepTime = 5
     ap.add_argument(u'-d', u'--database', help=u'The bot database. Default is {}'.format(dbname),
                     default=u'{}'.format(dbname))
     ap.add_argument('-r', '--read', help='Mark all existing queries as read without responding, then exit.',
                     default=False, action='store_true', dest="mark_read")
+    ap.add_argument('-s', '--sleep', help=u'Time to sleep between API checks. Default is {} seconds.'.format(sleepTime),
+                    default=sleepTime)
     addLoggingArgs(ap)
     args = ap.parse_args()
     handleLoggingArgs(args)
 
     dbname = args.database if args.database else dbname
+    sleepTime = args.sleep if args.sleep else sleepTime
 
     hp = HTMLParser()
 
@@ -73,7 +77,7 @@ def run_bot():
         if args.mark_read:
             exit(0)
 
-        sleep(5)
+        sleep(sleepTime)
 
 if "__main__" == __name__:
     run_bot()
