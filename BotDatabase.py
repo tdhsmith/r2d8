@@ -57,6 +57,12 @@ class BotDatabase(object):
         self._connection.execute('INSERT INTO comments VALUES(?)', (comment.id,))
         self._connection.commit()
 
+    def remove_comment(self, comment):
+        log.debug('removing comment {} from database'.format(comment.id))
+        comment.mark_unread()
+        self._connection.execute('DELETE FROM comments WHERE id = (?)', (comment.id,))
+        self._connection.commit()
+
     def comment_exists(self, comment):
         cmd = 'SELECT COUNT(*) FROM comments WHERE id=?'
         count = self._connection.execute(cmd, (comment.id,)).fetchall()[0]

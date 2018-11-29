@@ -54,6 +54,11 @@ def start_bot():
         '--config',
         help='Config file location for PRAW',
         default=None)
+    ap.add_argument(
+        '-f',
+        '--footer',
+        help='Custom footer to append to the message',
+        default='')
     addLoggingArgs(ap)
     args = ap.parse_args()
     handleLoggingArgs(args)
@@ -83,9 +88,16 @@ def start_bot():
         'getaliases': ch.getaliases,
         'getparentinfo': ch.getParentInfo,
         'getinfoparent': ch.getParentInfo,
-        'getthreadinfo': ch.getThreadInfo
+#        'getthreadinfo': ch.getThreadInfo,
+        'expandurls': ch.expandURLs,
+        'tryagain': ch.removalRequest,
+        'shame': ch.removalRequest
     }
-    BOTCMD_REGEX = re.compile('/?u/{}\s(\w+)'.format(botname), re.IGNORECASE)
+    BOTCMD_REGEX = re.compile('/?u/{}\s(\w+)(\s\w+)*'.format(botname), re.IGNORECASE)
+
+    CONFIG = {
+        'footer': args.footer
+    }
 
     # target is like once, but we don't even need to scan for mentions
     if args.target:
@@ -95,13 +107,17 @@ def start_bot():
             bdb.add_comment(comment)
             if args.mark_read:
                 return
-        commands = [args.command] if args.command else [c.lower() for c in BOTCMD_REGEX.findall(comment.body)]
+        commands = [args.command.split()] if args.command else BOTCMD_REGEX.findall(comment.body)
         for cmd in commands:
-            if cmd in CMDMAP:
+            primaryCommand = cmd[0].lower()
+            if primaryCommand in CMDMAP:
                 comment.body = hp.unescape(comment.body)
-                CMDMAP[cmd](comment)
+                CMDMAP[primaryCommand](
+                    comment,
+                    subcommands=cmd[1:],
+                    config=CONFIG)
             else:
-                log.info('Got unknown command: {}'.format(cmd))
+                log.info('Got unknown command: {}'.format(primaryCommand))
         return
 
     log.info('Waiting for new PMs and/or notifications.')
@@ -114,12 +130,16 @@ def start_bot():
                     if args.mark_read:
                         continue
 
-                    for cmd in [c.lower() for c in BOTCMD_REGEX.findall(comment.body)]:
-                        if cmd in CMDMAP:
+                    for cmd in BOTCMD_REGEX.findall(comment.body):
+                        primaryCommand = cmd[0].lower()
+                        if primaryCommand in CMDMAP:
                             comment.body = hp.unescape(comment.body)
-                            CMDMAP[cmd](comment)
+                            CMDMAP[primaryCommand](
+                                comment,
+                                subcommands=cmd[1:],
+                                config=CONFIG)
                         else:
-                            log.info('Got unknown command: {}'.format(cmd))
+                            log.info('Got unknown command: {}'.format(primaryCommand))
 
         except Exception as e:
             log.error('Caught exception: {}'.format(e))

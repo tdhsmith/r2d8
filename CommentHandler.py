@@ -37,16 +37,16 @@ class CommentHandler(object):
             log.warn('Got too long game name: {}'.format(name))
             return None
 
-        game = self._bgg.game(name)
-        if game:
-            return game
-
-        # Well OK, how about game ID?
-        if not re.search('([^\d]+)', name):  # all digits is probably an ID
-            game = self._bgg.game(name=None, game_id=name)
+        # Search IDs when name format is '#1234'
+        if re.search('^#(\d+)$', name):  
+            game = self._bgg.game(name=None, game_id=name[1:])
             if game:
                 log.debug('found game {} via searching by ID'.format(name))
                 return game
+
+        game = self._bgg.game(name)
+        if game:
+            return game
 
         # embedded url? If so, extract.
         log.debug('Looking for embedded URL')
@@ -133,7 +133,16 @@ class CommentHandler(object):
 
         return None
 
-    def _findGames(self, items):
+    NO_SORT_KEYWORD = 'nosort'
+    DEFAULT_SORT = 'sort_name'
+    SORT_FUNCTIONS = {
+        'sort_name': lambda g: g.name,
+        'sort_year': lambda g: g.year,
+        'sort_rank': lambda g: g.rank
+        # TODO
+    }
+
+    def _findGames(self, items, sort='name'):
         # convert aliases to real names. It may be better to do this after we don't find the
         # game. Oh, well.
         #   I think this might be better behavior, since it makes it easy to
@@ -171,11 +180,13 @@ class CommentHandler(object):
                 continue
 
         # sort by game name because why not?
-        games = sorted(games, key=lambda g: g.name)
+        if sort and sort in self.SORT_FUNCTIONS:
+            fn = self.SORT_FUNCTIONS.get(sort)
+            games = sorted(games, key=fn)
 
         return [games, not_found]
 
-    def _getInfoResponseBody(self, comment, mode=None):
+    def _getBoldedEntries(self, comment):
         body = comment.body
         # bolded = re.findall(u'\*\*([^\*]+)\*\*', body)
         # Now I've got two problems.
@@ -184,14 +195,22 @@ class CommentHandler(object):
             log.warn('Got getinfo command, but nothing is bolded. Ignoring comment.')
             log.debug('comment was: {}'.format(body))
             return
+        # we now have all the games.
 
         if comment.subreddit.display_name.lower() == 'boardgamescirclejerk':
                 cjgames = ['Gloomhaven', 'Patchwork', 'Scythe']
                 bolded = [choice(cjgames), 'Keyforge', 'Keyforge', 'Keyforge']
-        [games, not_found] = self._findGames(bolded)
+        return bolded
 
-        # we now have all the games.
-        mode = 'short' if len(games) > 6 else mode
+    def _getInfoResponseBody(self, comment, gameNames, mode, columns=None, sort=None):
+        assert mode
+        assert gameNames
+
+        [games, not_found] = self._findGames(gameNames, sort)
+
+        # disallow long mode for 
+        if mode == 'long' and len(games) > 6:
+            mode = 'short'
 
         if comment.subreddit.display_name.lower() == 'boardgamescirclejerk':
             not_found = None
@@ -205,17 +224,15 @@ class CommentHandler(object):
         else:
             log.warn('Found no games in comment {}'.format(comment.id))
 
-        # get the information for each game in a nice tidy list of strings.
-        # get the mode if given. Can be short or long or normal. Default is normal.
-        if not mode:
-            m = re.search('getinfo\s(\w+)', body, flags=re.IGNORECASE)
-            if m:
-                mode = m.group(1).lower() if m.group(1).lower() in ['short', 'long'] else mode
+        log.warning('Using mode {} and columns {}'.format(mode, columns))
 
         if mode == 'short':
             infos = self._getShortInfos(games)
         elif mode == 'long':
             infos = self._getLongInfos(games)
+        elif mode == 'tabular':
+            assert columns
+            infos = self._getInfoTable(games, columns)
         else:
             infos = self._getStdInfos(games)
 
@@ -228,7 +245,8 @@ class CommentHandler(object):
 
         response = None
         if len(infos):
-            response = self._header + '\n'.join([i for i in infos])
+            response = self._header + '\n'.join([i for i in infos]) + self._footer
+            # TODO: why the copied list?
 
         return response
 
@@ -243,19 +261,47 @@ class CommentHandler(object):
 
         return players
 
-    def getInfo(self, comment: praw.models.Comment, replyTo=None, mode=None):
+    DISPLAY_MODES = [
+        'short',
+        'standard',
+        'long',
+        'tabular'
+    ]
+    DEFAULT_DISPLAY_MODE = 'standard'
+
+    def getInfo(self, comment: praw.models.Comment, subcommands: list, config: dict):
         '''Reply to comment with game information. If replyTo is given reply to original else
         reply to given comment.'''
         if self._botdb.ignore_user(comment.author.name):
             log.info("Ignoring comment by {}".format(comment.author.name))
             return
 
-        response = self._getInfoResponseBody(comment, mode)
+        replyTo = None
+
+        mode = None
+        if len(subcommands) > 0 and subcommands[0].lower() in self.DISPLAY_MODES:
+            mode = subcommands[0].lower()
+        else:
+            mode = self.DEFAULT_DISPLAY_MODE
+        columns = subcommands[1:] if mode == 'tabular' else None
+
+        if self.NO_SORT_KEYWORD in subcommands:
+            sort = None
+        else:
+            for sort_type in self.SORT_FUNCTIONS.keys():
+                if sort_type in subcommands:
+                    sort = sort_type
+                    break
+
+        footer = '\n' + config['footer'] if 'footer' in config else ''
+
+        bolded = self._getBoldedEntries(comment)
+        response = self._getInfoResponseBody(comment, bolded, mode, columns, sort)
         if response:
             if replyTo:
-                replyTo.reply(response)
+                replyTo.reply(response + footer)
             else:
-                comment.reply(response)
+                comment.reply(response + footer)
             log.info('Replied to info request for comment {}'.format(comment.id))
         else:
             log.warn('Did not find anything to reply to in comment {}'.format(comment.id))
@@ -307,6 +353,71 @@ class CommentHandler(object):
 
         return infos
 
+    ALLOWED_COLUMNS = {
+        'year': 'Year Published',
+        # 'designers': 'Designers',
+        # 'artists': 'Artists',
+        'rank': 'BGG Rank',
+        'rating': 'Average Rating',
+        'score': 'Geek Score (Weighted Rating)',
+        'rating_median': 'Median Rating',
+        'rating_stddev': 'Rating Standard Deviation',
+        'raters': 'Rating Count',
+        'owners': 'BGG Owner Count',
+        # 'playercount': 'Player Count (min-max)'
+        'id': 'BGG ID'
+    }
+
+    def _getGameColumn(self, game: boardgamegeek.games.BoardGame, column):
+        if column == 'year':
+            return str(game.year)
+        elif column == 'rank':
+            return str(game.boardgame_rank)
+        elif column == 'rating':
+            return str(game.rating_average)
+        elif column == 'score':
+            return str(game.rating_bayes_average)
+        elif column == 'rating_median':
+            return str(game.rating_median)
+        elif column == 'rating_stddev':
+            return str(game.rating_stddev)
+        elif column == 'raters':
+            return str(game.users_rated)
+        elif column == 'owners':
+            return str(game.users_owned)
+        elif column == 'id':
+            return str(game.id)
+        return 'unknown `{}`'.format(column)
+
+    def _getInfoTable(self, games, columns):
+        rows = list()
+        # build header
+        header = 'Game Name'
+        alignment = ':--'
+        unknownColumns = list()
+
+        for column in columns:
+            if column not in self.ALLOWED_COLUMNS:
+                log.info('Unknown tabular column {}, skipping'.format(column))
+                unknownColumns.append(column)
+                continue
+            header = header + '|' + self.ALLOWED_COLUMNS[column]
+            alignment = alignment + '|:--'
+
+        rows.append(header)
+        rows.append(alignment)
+        columns = [c for c in columns if c not in unknownColumns]
+
+        # build rows
+        for game in games:
+            row = '[**{}**](http://boardgamegeek.com/boardgame/{})'.format(game.name, game.id)
+            for column in columns:
+                row = row + '|' + self._getGameColumn(game, column)
+            log.info('adding info: {}'.format(row))
+            rows.append(row)
+
+        return rows
+
     def _getLongInfos(self, games):
         infos = list()
         for game in games:
@@ -343,7 +454,7 @@ class CommentHandler(object):
 
         return infos
 
-    def repairComment(self, comment):
+    def repairComment(self, comment: praw.models.Comment, subcommands: list, config: dict):
         '''Look for maps from missed game names to actual game names. If
         found repair orginal comment.'''
         if self._botdb.ignore_user(comment.author.name):
@@ -397,23 +508,20 @@ class CommentHandler(object):
         else:
             modes = re.findall('[getparent|get]info\s(\w+)', grandparent.body)
 
-        if modes:
-            log.debug('Recreating {} mode from the GP.'.format(modes[0]))
-            pbody += ' /u/{} getinfo {}'.format(self._botname, modes[0])
-        else:
-            pbody += ' /u/{} getinfo'.format(self._botname)
+        targetmode = modes[0] if modes else self.DEFAULT_DISPLAY_MODE
 
         parent = parent.edit(pbody)
-        new_reply = self._getInfoResponseBody(parent)
+        bolded = self._getBoldedEntries(comment)
+        new_reply = self._getInfoResponseBody(parent, bolded, targetmode)
 
         # should check for Editiable class somehow here. GTL
         log.debug('Replacing bot comment {} with: {}'.format(parent.id, new_reply))
         parent.edit(new_reply)
 
-    def xyzzy(self, comment):
+    def xyzzy(self, comment: praw.models.Comment, subcommands: list, config: dict):
         comment.reply('Nothing happens.')
 
-    def getParentInfo(self, comment):
+    def getParentInfo(self, comment: praw.models.Comment, subcommands: list, config: dict):
         '''Allows others to call the bot to getInfo for parent posts.'''
         if self._botdb.ignore_user(comment.author.name):
             log.info("Ignoring comment by {}".format(comment.author.name))
@@ -426,15 +534,10 @@ class CommentHandler(object):
             log.info('Got a repair comment as root, ignoring.')
             return
 
-        m = re.search('getparentinfo\s(\w+)', comment.body, re.IGNORECASE)
-        mode = None
-        if m:
-            mode = 'short' if m.group(1).lower() == 'short' else 'long'
-
         parent = comment.parent()
-        self.getInfo(parent, comment, mode)
+        self.getInfo(parent, comment, subcommands=subcommands, config=config)
 
-    def alias(self, comment):
+    def alias(self, comment: praw.models.Comment, subcommands: list, config: dict):
         '''add an alias to the database.'''
         if not self._botdb.is_admin(comment.author.name):
             log.info('got alias command from non admin {}, ignoring.'.format(
@@ -450,7 +553,7 @@ class CommentHandler(object):
 
         comment.reply(response)
 
-    def getaliases(self, comment):
+    def getaliases(self, comment: praw.models.Comment, subcommands: list, config: dict):
         if self._botdb.ignore_user(comment.author.name):
             log.info("Ignoring comment by {}".format(comment.author.name))
             return
@@ -463,17 +566,71 @@ class CommentHandler(object):
         log.info('Responding to getalaises request with {} aliases'.format(len(aliases)))
         comment.reply(response)
 
-    def getThreadInfo(self, comment: praw.models.Comment):
-        '''get info for all top-level comments in a single thread'''
+    def expandURLs(self, comment: praw.models.Comment, subcommands: list, config: dict):
         if self._botdb.ignore_user(comment.author.name):
             log.info("Ignoring comment by {}".format(comment.author.name))
             return
-        if (not comment.is_root):
-            # TODO: respond directly to the user
-            comment.author.message('r2d8 command error', 
-                'The `getthreadinfo` command must be used in a top-level comment.\n\nFor questions and issues, please visit /r/r2d8.')
+
+        replyTo = None
+        mode = None
+        if len(subcommands) > 0 and subcommands[0].lower() in self.DISPLAY_MODES:
+            mode = subcommands[0].lower()
+        else:
+            mode = self.DEFAULT_DISPLAY_MODE
+
+        footer = '\n' + config['footer'] if 'footer' in config else ''
+
+        body = comment.body
+        urls = [('#' + id) for id in re.findall('boardgamegeek.com/(?:boardgame|thing)/(\d+)', body, flags=re.UNICODE)]
+
+        response = self._getInfoResponseBody(comment, urls, mode)
+        log.error('footer {} ({})'.format(footer, type(footer)))
+        if response:
+            if replyTo:
+                replyTo.reply(response + footer)
+            else:
+                comment.reply(response + footer)
+            log.info('Replied to info request for comment {}'.format(comment.id))
+        else:
+            log.warn('Did not find anything to reply to in comment {}'.format(comment.id))
+
+    def removalRequest(self, comment: praw.models.Comment, subcommands: list, config: dict):
+        # if self._botdb.ignore_user(comment.author.name):
+        #     log.info("Ignoring comment by {}".format(comment.author.name))
+        #     return
+
+        # for now removals are limited to admins
+        if not self._botdb.is_admin(comment.author.name):
+            log.info('got remove command from non admin {}, ignoring.'.format(
+                comment.author.name))
             return
+        
+        if comment.is_root:
+            log.error('removal requested on top-level comment {}, ignoring'.format(comment.id))
+            return
+        
+        botmessage: praw.models.Comment = comment.parent()
+        try:
+            # delete the post
+            botmessage.delete()
+            # attempt to unmark the parent as read
+            if not botmessage.is_root:
+                self._botdb.remove_comment(botmessage.parent)
+        except boardgamegeek.exceptions.BoardGameGeekError as e:
+            log.error('Error deleting comment {} by {}'.format(original.id, original.author.name))
+        return
+
+    # def getThreadInfo(self, comment: praw.models.Comment, subcommands: list, config: dict):
+    #     '''get info for all top-level comments in a single thread'''
+    #     if self._botdb.ignore_user(comment.author.name):
+    #         log.info("Ignoring comment by {}".format(comment.author.name))
+    #         return
+    #     if (not comment.is_root):
+    #         # TODO: respond directly to the user
+    #         comment.author.message('r2d8 command error', 
+    #             'The `getthreadinfo` command must be used in a top-level comment.\n\nFor questions and issues, please visit /r/r2d8.')
+    #         return
 
 
-        for c in comment.parent().comments:
-            continue # TODO here
+    #     for c in comment.parent().comments:
+    #         continue # TODO here
