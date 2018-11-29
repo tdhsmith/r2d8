@@ -158,11 +158,11 @@ class CommentHandler(object):
                 # game = self._bgg.game(game_name)
                 game = self._bggQueryGame(game_name)
                 if game:
-                    if game.name not in seen:
+                    if game.id not in seen:
                         games.append(game)
                     # don't add dups. This can happen when the same game is calledby two valid
                     # names in a post.
-                    seen.add(game.name)
+                    seen.add(game.id)
                 else:
                     not_found.append(game_name)
 
