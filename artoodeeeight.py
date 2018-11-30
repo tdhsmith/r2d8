@@ -93,7 +93,7 @@ def start_bot():
         'tryagain': ch.removalRequest,
         'shame': ch.removalRequest
     }
-    BOTCMD_REGEX = re.compile('/?u/{}\s(\w+)(\s\w+)*'.format(botname), re.IGNORECASE)
+    BOTCMD_REGEX = re.compile('/?u/{}\s(\w+)((?:\s\w+)*)'.format(botname), re.IGNORECASE)
 
     CONFIG = {
         'footer': args.footer
@@ -114,7 +114,7 @@ def start_bot():
                 comment.body = hp.unescape(comment.body)
                 CMDMAP[primaryCommand](
                     comment,
-                    subcommands=cmd[1:],
+                    subcommands=cmd[1].split(),
                     config=CONFIG)
             else:
                 log.info('Got unknown command: {}'.format(primaryCommand))
@@ -136,7 +136,7 @@ def start_bot():
                             comment.body = hp.unescape(comment.body)
                             CMDMAP[primaryCommand](
                                 comment,
-                                subcommands=cmd[1:],
+                                subcommands=cmd[1].split(),
                                 config=CONFIG)
                         else:
                             log.info('Got unknown command: {}'.format(primaryCommand))
