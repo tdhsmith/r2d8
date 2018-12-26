@@ -269,14 +269,12 @@ class CommentHandler(object):
     ]
     DEFAULT_DISPLAY_MODE = 'standard'
 
-    def getInfo(self, comment: praw.models.Comment, subcommands: list, config: dict):
+    def getInfo(self, comment: praw.models.Comment, subcommands: list, config: dict, replyTo = None):
         '''Reply to comment with game information. If replyTo is given reply to original else
         reply to given comment.'''
         if self._botdb.ignore_user(comment.author.name):
             log.info("Ignoring comment by {}".format(comment.author.name))
             return
-
-        replyTo = None
 
         mode = None
         if len(subcommands) > 0 and subcommands[0].lower() in self.DISPLAY_MODES:
@@ -297,7 +295,9 @@ class CommentHandler(object):
         footer = '\n' + config['footer'] if 'footer' in config else ''
 
         bolded = self._getBoldedEntries(comment)
-        response = self._getInfoResponseBody(comment, bolded, mode, columns, sort)
+        response = None
+        if bolded:
+            response = self._getInfoResponseBody(comment, bolded, mode, columns, sort)
         if response:
             if replyTo:
                 replyTo.reply(response + footer)
@@ -536,7 +536,7 @@ class CommentHandler(object):
             return
 
         parent = comment.parent()
-        self.getInfo(parent, comment, subcommands=subcommands, config=config)
+        self.getInfo(parent, subcommands=subcommands, config=config, replyTo=comment)
 
     def alias(self, comment: praw.models.Comment, subcommands: list, config: dict):
         '''add an alias to the database.'''
@@ -546,6 +546,7 @@ class CommentHandler(object):
             return
 
         response = 'executing alias command.\n\n'
+        # TODO: use bold fn
         for match in re.findall('\*\*([^\*]+)\*\*=\*\*([^\*]+)\*\*', comment.body):
             mess = 'Adding alias to database: "{}" = "{}"'.format(match[0], match[1])
             log.info(mess)

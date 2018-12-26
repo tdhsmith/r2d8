@@ -8,7 +8,7 @@ User=r2d8
 Restart=always
 Type=simple
 WorkingDirectory=/home/r2d8/r2d8-scripts
-ExecStart=/usr/bin/python2 artoodeeeight.py -l info -d r2d8-bot.db
+ExecStart=/usr/bin/python3 artoodeeeight.py -l info -d r2d8-bot.db
 
 [Install]
 WantedBy=multi-user.target
